@@ -1,337 +1,136 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-    <title>Sigma Person Project</title>
-    <style>
-        :root {
-            --accent: #ffffff;
-            --r: 255; --g: 255; --b: 255;
-            --glass: rgba(255, 255, 255, 0.1);
-            --blur: blur(20px) saturate(180%);
-            --ios-ease: cubic-bezier(0.4, 0, 0.2, 1);
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Liquid Glass Scroll Effect</title>
 
-        * {
-            margin: 0; padding: 0; box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto;
-            -webkit-tap-highlight-color: transparent;
-        }
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
-        body, html {
-            background: #000;
-            color: var(--accent);
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
+body{
+  font-family:Arial, Helvetica, sans-serif;
+  height:200vh;
+  overflow-x:hidden;
+  background:#000;
+}
 
-        /* ====== Background Shader ====== */
-        canvas#canvas {
-            position: fixed; inset: 0;
-            width: 100%; height: 100%;
-            z-index: -2;
-            object-fit: cover;
-        }
+/* SECTION */
+.section{
+  height:200vh;
+  position:relative;
+}
 
-        .solid-bg {
-            position: fixed; inset: 0;
-            background: rgb(14, 14, 14);
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.8s ease;
-        }
+/* Sticky background wrapper */
+.sticky-bg{
+  position:sticky;
+  top:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
 
-        /* ====== Intro Screen ====== */
-        #intro {
-            position: fixed; inset: 0;
-            background: #fff; color: #000;
-            z-index: 9999;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; font-weight: 700; letter-spacing: 4px;
-            transition: 1.2s var(--ios-ease);
-        }
+/* Background Image */
+.bg-image{
+  width:70vw;
+  aspect-ratio:1/1; /* agar tidak lonjong */
+  background:url('https://i.ibb.co.com/rKbVBzJq/119ee7aeb3a9ec9753d5d82f3604a245.jpg') center/cover no-repeat;
+  border-radius:20%;
+  transition: border-radius 0.1s linear;
+  will-change: border-radius, transform;
+}
 
-        /* ====== Navigation & Toolbar ====== */
-        .toolbar-wrapper {
-            position: fixed; left: 50%; transform: translateX(-50%);
-            width: 95%; max-width: 480px; z-index: 1000;
-            transition: all 0.6s var(--ios-ease);
-        }
+/* Liquid Glass Button */
+.glass-btn{
+  position:absolute;
+  padding:16px 40px;
+  font-size:18px;
+  color:white;
+  background:rgba(255,255,255,0.15);
+  border:1px solid rgba(255,255,255,0.3);
+  border-radius:50px;
+  backdrop-filter:blur(15px);
+  -webkit-backdrop-filter:blur(15px);
+  cursor:pointer;
+  overflow:hidden;
+  transition:all 0.4s ease;
+}
 
-        .toolbar-wrapper.above { top: 20px; }
-        .toolbar-wrapper.below { 
-            bottom: 25px; 
-            background: var(--glass); 
-            backdrop-filter: var(--blur);
-            border-radius: 40px;
-            padding: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
+/* Liquid Shine Effect */
+.glass-btn::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:100%;
+  height:100%;
+  background:linear-gradient(
+    120deg,
+    rgba(255,255,255,0.1),
+    rgba(255,255,255,0.6),
+    rgba(255,255,255,0.1)
+  );
+  transition:0.6s;
+}
 
-        .toolbar-content {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 10px; width: 100%;
-        }
+.glass-btn:hover::before{
+  left:100%;
+}
 
-        /* Buttons & Glass */
-        .glass-btn {
-            background: var(--glass);
-            backdrop-filter: var(--blur);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 25px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.3s var(--ios-ease);
-        }
+.glass-btn:hover{
+  box-shadow:0 0 40px rgba(255,255,255,0.4);
+  transform:scale(1.05);
+}
 
-        .circle-btn { width: 50px; height: 50px; border-radius: 50%; }
-        .menu-label { padding: 0 20px; height: 50px; font-weight: 600; font-size: 14px; }
-
-        /* iOS Liquid Zoom Effect (Below Mode) */
-        .toolbar-wrapper.below .glass-btn:active {
-            transform: scale(1.2);
-            filter: brightness(1.5);
-        }
-
-        /* Searchbar */
-        .search-container {
-            flex: 1; height: 50px;
-            position: relative; overflow: hidden;
-        }
-        .search-container input {
-            width: 100%; height: 100%; border: none; background: transparent;
-            color: var(--accent); padding-left: 45px; outline: none;
-        }
-        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); }
-
-        /* ====== Panels & Modals ====== */
-        .panel {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
-            width: 90%; max-width: 400px; opacity: 0; pointer-events: none;
-            transition: 0.4s var(--ios-ease); z-index: 900;
-            padding: 20px; border-radius: 30px;
-        }
-        .panel.active { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-
-        .expand-box { overflow: hidden; max-height: 0; transition: 0.5s var(--ios-ease); opacity: 0; }
-        .expand-box.open { max-height: 500px; opacity: 1; margin-top: 10px; }
-
-        .suggestion-item { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-
-        /* Help UI */
-        .help-overlay {
-            position: fixed; inset: 0; backdrop-filter: blur(25px);
-            background: rgba(0,0,0,0.4); z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: 0.4s;
-        }
-        .help-overlay.active { opacity: 1; pointer-events: auto; }
-        
-        .liquid-glass-btn {
-            width: 100%; height: 50px; margin-top: 20px; border-radius: 25px;
-            background: transparent; border: 1px solid rgba(0,0,0,0.8);
-            color: var(--accent); font-weight: bold; cursor: pointer;
-            box-shadow: inset 0 0 15px rgba(255,255,255,0.4), 0 5px 15px rgba(0,0,0,0.2);
-            position: relative;
-        }
-
-        /* Color Grid */
-        .color-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 10px 0; }
-        .color-dot { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 1px solid white; cursor: pointer; }
-
-        /* ====== Content ====== */
-        .main-content { padding: 150px 25px 100px; min-height: 200vh; position: relative; }
-
-        @media(min-width: 481px) { body { display: none; } } /* Mobile Only Guard */
-    </style>
+/* Fade out animation */
+.fade-out{
+  opacity:0;
+  pointer-events:none;
+  transform:scale(0.9);
+}
+</style>
 </head>
 <body>
 
-    <div id="intro">SIGMA PROJECT</div>
+<div class="section">
+  <div class="sticky-bg">
+    <div class="bg-image" id="bgImage"></div>
+    <button class="glass-btn" id="scrollBtn">Explore</button>
+  </div>
+</div>
 
-    <canvas id="canvas"></canvas>
-    <div class="solid-bg" id="solidBg"></div>
+<script>
+const bgImage = document.getElementById("bgImage");
+const scrollBtn = document.getElementById("scrollBtn");
+const section = document.querySelector(".section");
 
-    <div class="toolbar-wrapper below" id="toolbar">
-        <div class="toolbar-content">
-            <div class="glass-btn circle-btn" onclick="toggleHelp()">?</div>
-            
-            <div class="glass-btn search-container" id="searchBar">
-                <span class="search-icon">🔍</span>
-                <input type="text" placeholder="Search..." id="mainInput" onfocus="showSearch()" onblur="hideSearch()">
-            </div>
+/* Scroll Morph Effect */
+window.addEventListener("scroll", () => {
+  const rect = section.getBoundingClientRect();
+  const windowHeight = window.innerHeight;
 
-            <div class="glass-btn menu-label" onclick="toggleMenu()">MENU</div>
-        </div>
-    </div>
+  let progress = 1 - (rect.bottom / (rect.height + windowHeight));
+  progress = Math.min(Math.max(progress, 0), 1);
 
-    <div class="panel glass-btn" id="searchPanel" style="bottom: 90px; flex-direction: column; align-items: flex-start; backdrop-filter: none; background: transparent; border:none;">
-        <div class="suggestion-item">Profile</div>
-        <div class="suggestion-item">Sejarah</div>
-        <div class="suggestion-item">Agenda</div>
-    </div>
+  const radius = 20 + (progress * 30); // 20% → 50%
+  bgImage.style.borderRadius = radius + "%";
+});
 
-    <div class="panel glass-btn" id="menuPanel" style="flex-direction: column; align-items: flex-start;">
-        <div style="width: 100%;" onclick="toggleExpand('aboutEx')">Tentang</div>
-        <div id="aboutEx" class="expand-box">
-            <div class="suggestion-item" style="padding-left: 15px;">• Profile</div>
-            <div class="suggestion-item" style="padding-left: 15px;">• Sejarah</div>
-            <div class="suggestion-item" style="padding-left: 15px;">• Agenda</div>
-        </div>
+/* Button Click Action */
+scrollBtn.addEventListener("click", () => {
+  scrollBtn.classList.add("fade-out");
 
-        <div style="width: 100%; margin-top: 15px;" onclick="toggleExpand('themeEx')">Theme</div>
-        <div id="themeEx" class="expand-box">
-            <div onclick="toggleExpand('colorGridEx')">Color Selection</div>
-            <div id="colorGridEx" class="expand-box color-grid">
-                </div>
-            <div class="suggestion-item" onclick="setMode('above')">Switch To Above</div>
-            <div class="suggestion-item" onclick="setMode('below')">Switch To Below</div>
-        </div>
-    </div>
+  window.scrollTo({
+    top: window.innerHeight,
+    behavior: "smooth"
+  });
+});
+</script>
 
-    <div class="help-overlay" id="helpModal" onclick="toggleHelp()">
-        <div class="glass-btn" style="width: 85%; padding: 30px; flex-direction: column;" onclick="event.stopPropagation()">
-            <h2 style="margin-bottom: 15px;">Bantuan & Laporan</h2>
-            <p style="font-size: 14px; text-align: center; line-height: 1.5;">
-                Website ini hanya menjadi kawah pembelajaran edukasi mengenai teknologi coding, 
-                jika kamu merasa kesusahan atau mendapatkan bug bisa laporkan kepada kami, terimakasih!
-            </p>
-            <button class="liquid-glass-btn">Hubungi Kami</button>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <h1 style="font-size: 40px; margin-bottom: 20px;">Sigma Person Project</h1>
-        <p>Scroll kebawah untuk melihat transisi background.</p>
-    </div>
-
-    <script>
-        // 1. Intro & Auto Scroll
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const intro = document.getElementById('intro');
-                intro.style.opacity = '0';
-                intro.style.transform = 'translateY(-100%)';
-                
-                setTimeout(() => {
-                    window.scrollTo({ top: 400, behavior: 'smooth' });
-                }, 800);
-            }, 1500);
-        });
-
-        // 2. Control Functions
-        function toggleMenu() { document.getElementById('menuPanel').classList.toggle('active'); }
-        function toggleHelp() { document.getElementById('helpModal').classList.toggle('active'); }
-        function toggleExpand(id) { document.getElementById(id).classList.toggle('open'); }
-        
-        function showSearch() { document.getElementById('searchPanel').classList.add('active'); }
-        function hideSearch() { setTimeout(() => document.getElementById('searchPanel').classList.remove('active'), 200); }
-
-        function setMode(mode) {
-            const toolbar = document.getElementById('toolbar');
-            toolbar.className = `toolbar-wrapper ${mode}`;
-            toggleMenu();
-        }
-
-        // 3. Color Logic
-        const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#FFFFFF', 
-                        '#800000', '#008000', '#000080', '#808000', '#800080', '#008080', '#C0C0C0', '#444444'];
-        const grid = document.getElementById('colorGridEx');
-        colors.forEach(c => {
-            const dot = document.createElement('div');
-            dot.className = 'color-dot';
-            dot.style.background = c;
-            dot.onclick = () => {
-                document.documentElement.style.setProperty('--accent', c);
-                document.getElementById('solidBg').style.backgroundColor = c + '22'; // Tinted background
-            };
-            grid.appendChild(dot);
-        });
-
-        // 4. Scroll Effects (Curl & Background)
-        let lastScrollY = window.scrollY;
-        window.addEventListener('scroll', () => {
-            const current = window.scrollY;
-            const diff = Math.abs(current - lastScrollY);
-            lastScrollY = current;
-
-            // Background Solid Transition
-            const opacity = Math.min(current / 600, 1);
-            document.getElementById('solidBg').style.opacity = opacity;
-
-            // Curl Effect
-            document.body.style.transform = `skewY(${Math.min(diff/50, 2)}deg)`;
-            clearTimeout(window.curlTimeout);
-            window.curlTimeout = setTimeout(() => {
-                document.body.style.transform = 'skewY(0deg)';
-            }, 100);
-
-            // Parallax Above Mode
-            const toolbar = document.getElementById('toolbar');
-            if (toolbar.classList.contains('above')) {
-                toolbar.style.opacity = 1 - (current / 400);
-                toolbar.style.transform = `translateX(-50%) translateY(${current * 0.4}px)`;
-            }
-        });
-
-        // 5. WEBGL SHADER BACKGROUND (Matthias Hurrle Original)
-        const canvas = document.getElementById('canvas');
-        const gl = canvas.getContext('webgl2');
-        const dpr = window.devicePixelRatio;
-
-        const vertexSource = `#version 300 es
-        in vec2 position; void main() { gl_Position = vec4(position, 0., 1.); }`;
-        
-        const fragmentSource = `#version 300 es
-        precision highp float;
-        uniform vec2 resolution; uniform float time;
-        out vec4 fragColor;
-        mat2 rot(float a) { return mat2(cos(a),-sin(a),sin(a),cos(a)); }
-        void main() {
-            vec2 uv = (gl_FragCoord.xy - .5 * resolution.xy) / min(resolution.y, resolution.x);
-            vec3 col = vec3(0);
-            float t = time * 0.5;
-            uv *= rot(t * 0.2);
-            for(float i=0.; i<3.; i++) {
-                uv = abs(uv) - 0.5;
-                uv *= rot(t + i);
-                col += 0.1 / length(uv);
-            }
-            fragColor = vec4(col * vec3(0.2, 0.4, 0.8), 1.0);
-        }`;
-
-        // Shader setup logic (Simplified for space)
-        let program;
-        function setupShader() {
-            const vs = gl.createShader(gl.VERTEX_SHADER);
-            const fs = gl.createShader(gl.FRAGMENT_SHADER);
-            gl.shaderSource(vs, vertexSource); gl.compileShader(vs);
-            gl.shaderSource(fs, fragmentSource); gl.compileShader(fs);
-            program = gl.createProgram();
-            gl.attachShader(program, vs); gl.attachShader(program, fs);
-            gl.linkProgram(program);
-            const vertices = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
-            const buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-            const pos = gl.getAttribLocation(program, "position");
-            gl.enableVertexAttribArray(pos);
-            gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-        }
-
-        function render(now) {
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
-            gl.viewport(0, 0, canvas.width, canvas.height);
-            gl.useProgram(program);
-            gl.uniform2f(gl.getUniformLocation(program, "resolution"), canvas.width, canvas.height);
-            gl.uniform1f(gl.getUniformLocation(program, "time"), now * 0.001);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            requestAnimationFrame(render);
-        }
-
-        setupShader();
-        render(0);
-    </script>
 </body>
 </html>
